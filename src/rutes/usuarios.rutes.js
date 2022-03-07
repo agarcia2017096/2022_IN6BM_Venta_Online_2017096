@@ -11,13 +11,13 @@ var api = express.Router();
 api.post('/login', usuariosController.Login);
 
 //REGISTRAR USUARIO - CLIENTE
-api.post('/registrarUsuario', usuariosController.RegistrarClientes);
+api.post('/registrarUsuarios', usuariosController.RegistrarClientes);
 
 //EDITAR USUARIO CON VERIFICACIONES
-api.put('/editarUsuario',md_autentificacion.Auth, usuariosController.EditarPerfilUsuario)
+api.put('/editarUsuarios/:idUsuario',md_autentificacion.Auth, usuariosController.EditarPerfilUsuario)
 
 //ELIMINAR USUARIO - CLIENTE
-api.delete('/eliminarusuario',md_autentificacion.Auth,usuariosController.EliminarUsuarios)
+api.delete('/eliminarUsuarios/:idUsuario',md_autentificacion.Auth,usuariosController.EliminarUsuarios)
 
 
 module.exports = api

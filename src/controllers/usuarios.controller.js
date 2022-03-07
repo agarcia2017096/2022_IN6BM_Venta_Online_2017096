@@ -13,9 +13,7 @@ const jwt = require('../services/jwt');
 function Login(req, res) {
     var parametros = req.body;
 
- if(!parametros.email&&!parametros.password) return res.status(500)
- .send({ mensaje: 'Debe llenar los campos necesario'});
-
+ if(parametros.email&&parametros.password){
     Usuarios.findOne({ email : parametros.email }, (err, usuarioEncontrado)=>{
         if(err) return res.status(500).send({ mensaje: 'Error en la peticion' });
         if(usuarioEncontrado){
@@ -43,6 +41,10 @@ function Login(req, res) {
                 .send({ mensaje: 'Error, el correo no se encuentra registrado. Verifique los datos'})
         }
     })
+ }else{
+    return res.status(500)
+    .send({ mensaje: 'Debe llenar los campos necesarios'});
+ } 
 }
 
 //• Puede agregar un nuevo usuario.
@@ -56,7 +58,7 @@ function RegistrarClientes(req, res) {
             usuarioModel.nombre = parametros.nombre;
             usuarioModel.apellido = parametros.apellido;
             usuarioModel.email = parametros.email;
-            usuarioModel.rol = 'ROL_CLIENTES';
+            usuarioModel.rol = 'ROL_CLIENTE';
             usuarioModel.imagen = null;
 
             Usuarios.find({ email : parametros.email }, (err, alumnoEncontrado) => {
@@ -89,32 +91,63 @@ function RegistrarClientes(req, res) {
 //• Editar los datos de un usuario solamente si es un usuario de rol cliente.
 //**************************** 2. EDITAR USUARIOS ******************************* */
 function EditarPerfilUsuario(req, res) {
-    var idUser = req.params.idEmpresa;
+    var idUser = req.params.idUsuario;
     var parametros = req.body;
 
-    Usuarios.findOne(idUser,(err,usuarioBuscado)=>{
-        if(err) return res.status(500).send({mensaje: "Error, el usuario no existe"});
-        if(!usuarioEliminado) return res.status(404).send({mensaje: "Error, el usuario no existe"})
+    Usuarios.findOne({_id:idUser},(err,usuarioBuscado)=>{
+        if(err) return res.status(500).send({mensaje: "Error, el usuario no existe. Verifique el ID"});
+        if(!usuarioBuscado) return res.status(404).send({mensaje: "Error, el usuario no existe. Verifique el ID"})
 
         if(usuarioBuscado.rol=="ROL_ADMINISTRADOR"){
             return res.status(500).send({ mensaje: 'No pueden editar administradores'});
-        }else{
-            if(parametros.email || parametros.password|| parametros.email==""
-            || parametros.password==""){
-                return res.status(500)
-                .send({ mensaje: 'No puede modificar los campos necesarios para el logueo,solamente nombre, apellido y rol'});
-        
-            }else{
-                if(parametros.rol == "ROL_ADMINISTRADOR"){
-                    Empresas.findByIdAndUpdate(idUser, parametros, { new: true } ,(err, usuarioActualizado) => {
+        }else{//Acepta solo ID de clientes
+            if(req.user.rol=="ROL_ADMINISTRADOR"){//Administrador puede editar Cientes
+                if(parametros.email || parametros.password|| parametros.email==""
+                || parametros.password==""){
+                    return res.status(500)
+                    .send({ mensaje: 'No puede modificar los campos necesarios para el logueo,solamente nombre, apellido y rol'});
+            
+                }else{
+                    if(parametros.rol||parametros.rol==''){
+                        if(parametros.rol=="ROL_ADMINISTRADOR"){
+                            Usuarios.findByIdAndUpdate(idUser, parametros, { new: true } ,(err, usuarioActualizado) => {
+                                if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
+                                if(!usuarioActualizado) return res.status(404).send( { mensaje: 'Error al editar cliente'});
+                    
+                                return res.status(200).send({ empresa: usuarioActualizado});
+                            });
+                        } else{
+                            return res.status(500)
+                            .send({ mensaje: 'El rol ingresado no es válido (Ingrese ROL_ADMINISTRADOR)'});
+                        }
+                    }else{
+                        Usuarios.findByIdAndUpdate(idUser, parametros, { new: true } ,(err, usuarioActualizado) => {
+                            if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
+                            if(!usuarioActualizado) return res.status(404).send( { mensaje: 'Error al editar la empresa'});
+                            return res.status(200).send({ empresa: usuarioActualizado});
+                        });
+                    }
+                }
+
+            }else{//El CLiente solo puede editar perfil
+                console.log(usuarioBuscado._id)
+
+                if(usuarioBuscado._id==req.user.sub){
+                    console.log(usuarioBuscado._id)
+                    if(parametros.email || parametros.password|| parametros.email==""
+                    || parametros.password==""||parametros.rol||parametros.rol==""){
+                        return res.status(500)
+                        .send({ mensaje: 'El cliente no puede modificar los campos necesarios para el logueo, solamente nombre y apellido'});
+                    }
+                    Usuarios.findByIdAndUpdate(idUser, parametros, { new: true } ,(err, usuarioActualizado) => {
                         if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
                         if(!usuarioActualizado) return res.status(404).send( { mensaje: 'Error al editar la empresa'});
-                
                         return res.status(200).send({ empresa: usuarioActualizado});
                     });
+
                 }else{
                     return res.status(500)
-                .send({ mensaje: 'El rol ingresado no es válido (Ingrese ROL_ADMINISTRADOR)'});
+                    .send({ mensaje: 'No puede editar otros usuarios, solamnete su perfil de Cliente'});
                 }
             }
         }
@@ -125,36 +158,35 @@ function EditarPerfilUsuario(req, res) {
 //********************************* ELIMINAR USUARIOS ********************************* */
  //ELIMINAR USUARIOS
  function EliminarUsuarios(req, res){
-     var idUser = req.params.idCliente
+     var idUser = req.params.idUsuario
+     Usuarios.findOne({_id:idUser},(err,usuarioBuscado)=>{
+        if(err) return res.status(500).send({mensaje: "Error, el usuario no existe. Verifique el ID"});
+        if(!usuarioBuscado) return res.status(404).send({mensaje: "Error, el usuario no existe. Verifique el ID"})
 
-     if(req.user.rol=="ROL_CLIENTE"){
-        if(idUser == req.user.sub){
+        if(usuarioBuscado.rol=="ROL_ADMINISTRADOR"){
+            return res.status(500).send({ mensaje: 'No pueden editar administradores'});
+        }
+        
+        if(req.user.rol=="ROL_CLIENTE"){
+            if(usuarioBuscado._id == req.user.sub){
+                Usuarios.findByIdAndDelete(req.user.sub,(err,usuarioEliminado)=>{
+                    if(err) return res.status(500).send({mensaje: "Error, el usuario no existe"});
+                    if(!usuarioEliminado) return res.status(404).send({mensaje: "Error, el usuario no existe"})
+            
+                    return  res.status(200).send({usuario:usuarioEliminado});
+                })
+            }else{
+                return res.status(500).send({ mensaje: 'No puede eliminar otros clientes'});
+            }
+         }else{
             Usuarios.findByIdAndDelete(req.user.sub,(err,usuarioEliminado)=>{
                 if(err) return res.status(500).send({mensaje: "Error, el usuario no existe"});
                 if(!usuarioEliminado) return res.status(404).send({mensaje: "Error, el usuario no existe"})
         
                 return  res.status(200).send({usuario:usuarioEliminado});
             })
-        }else{
-            return res.status(500).send({ mensaje: 'No puede eliminar otros clientes'});
-        }
-     }else{
-        Usuarios.findOne(idUser,(err,usuarioBuscado)=>{
-            if(err) return res.status(500).send({mensaje: "Error, el usuario no existen"});
-            if(!usuarioEliminado) return res.status(404).send({mensaje: "Error, el usuario no existen"})
-            if(usuarioBuscado.rol=="ROL_ADMINISTRADOR"){
-                return res.status(500).send({ mensaje: 'No pueden eliminar administradores'});
-            }else{
-                Usuarios.findByIdAndDelete(idUser,(err,usuarioEliminado)=>{
-                    if(err) return res.status(500).send({mensaje: "Error, el usuario no existen"});
-                    if(!usuarioEliminado) return res.status(404).send({mensaje: "Error, el usuario no existen"})
-            
-                    return  res.status(200).send({usuario:usuarioEliminado});
-                })
-            }
-        })
-
-     }
+         }
+     })
 }
 
 //********************************* EXPORTAR ********************************* */

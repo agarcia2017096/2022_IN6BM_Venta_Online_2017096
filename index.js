@@ -6,7 +6,7 @@ const Usuarios = require('./src/models/usuarios.model');
 const bcrypt = require("bcrypt-nodejs");
 
 mongoose.Promise = global.Promise;
-mongoose.connect('mongodb://localhost:27017/IN6BM2_CONTROL_EMPRESA_2017096',{useNewUrlParser:true,useUnifiedTopology:true}).then(()=>{
+mongoose.connect('mongodb://localhost:27017/IN6BM2_VENTA_ONLINE_2017096',{useNewUrlParser:true,useUnifiedTopology:true}).then(()=>{
     console.log('Se encuentra conectado a la base de datos.');
 
     app.listen(3000,function(req, res){
@@ -20,7 +20,7 @@ mongoose.connect('mongodb://localhost:27017/IN6BM2_CONTROL_EMPRESA_2017096',{use
 //********************** 1. REGISTRAR ADMINISTRADOR POR DEFECTO ************** */
 function RegistrarAdministradorDefault(req, res) {
 
-    Usuarios.findOne({email:"Admin"}, (err, AdministradorEncontrados) => {
+    Usuarios.findOne({email:"ADMIN"}, (err, AdministradorEncontrados) => {
         if(!AdministradorEncontrados==null){
             console.log('El administrador ya se encuentra registrado')
         }
@@ -46,7 +46,7 @@ function RegistrarAdministradorDefault(req, res) {
                                 usuarioModel.save((err, usuarioGuardado) => {
                                     if (err) console.log('Error en la peticion');
                                     if(!usuarioGuardado) console.log('Error al agregar el Usuario') 
-                                        console.log('--El administrador se ha registrado registrado--')
+                                        console.log('--El administrador se ha registrado --')
 
                                 });
                             });                    
