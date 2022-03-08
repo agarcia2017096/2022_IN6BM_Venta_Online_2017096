@@ -47,13 +47,28 @@ function ObtenerCategoriasAdministrador(req, res) {
     if ( req.user.rol == "ROL_CLIENTE" ) return res.status(500)
     .send({ mensaje: 'No tiene acceso a buscar Categorias. Únicamente el Administrador puede hacerlo'});
 
-    Categorias.find({idCategoria:req.user.sub}, (err, categoriasEncontradas) => {
+    Categorias.find({idUsuario:req.user.sub}, (err, categoriasEncontradas) => {
         if(err) return res.status(500).send({ mensaje: "Error en la peticion" });
         if(!categoriasEncontradas) return res.status(500).send({ mensaje: "Error al obtener las categorias."});
         return res.status(200).send({ categoria: categoriasEncontradas })
-    })//.populate("idUsuario","nombre" )
+    })//.populate('idUsuario',"")
 }
+//PRUEBA DE POPULATE
+/*async function ObtenerCategoriasAdministrador (req,res){
+    try{
+        const categorias = await Categorias.find({idUsuario:req.user.sub}).populate("idUsuario").lean();
+        return res.status(200).send({categorias:categorias})
 
+    }catch(e){
+        return e
+    }
+
+}*/
+
+
+
+
+//Editar una categoría y eliminarla.
 //**************************** 3. EDITAR CATEGORIAS ******************************* */
 function EditarCategorias(req, res) {
     var idCat = req.params.idCategoria;
@@ -93,6 +108,8 @@ function EditarCategorias(req, res) {
     })
 }
 
+//Si algún producto pertenece a una categoría y es necesario eliminar dicha categoría, 
+//el producto debe pasar automáticamente a una categoría por defecto.
 //********************************* 4. ELIMINAR CATEGORIAS ********************************* */
 function EliminarCategorias(req, res){
     const idCat = req.params.idCategoria;
