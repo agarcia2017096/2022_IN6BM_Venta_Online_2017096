@@ -11,6 +11,8 @@ const ProductosRutas = require('./src/rutes/productos.rutes');
 
 const CategoriasRutas = require('./src/rutes/categorias.rutes');
 const FacturasRutas = require('./src/rutes/facturas.rutes');
+const CarritosRutas = require('./src/rutes/carritos.rutes');
+
 
 
 // MIDDLEWARES -> iNTERMEDIARIOS
@@ -21,7 +23,7 @@ app.use(express.json());
 app.use(cors());
 
 // CARGA DE RUTAS localhost:3000/api/obtenerProductos
-app.use('/api', UsuariosRutas,ProductosRutas,CategoriasRutas,FacturasRutas);
+app.use('/api', UsuariosRutas,ProductosRutas,CategoriasRutas,FacturasRutas,CarritosRutas);
 
 
 module.exports = app;
