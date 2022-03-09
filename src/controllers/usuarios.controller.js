@@ -164,7 +164,7 @@ function EditarPerfilUsuario(req, res) {
         if(!usuarioBuscado) return res.status(404).send({mensaje: "Error, el usuario no existe. Verifique el ID"})
 
         if(usuarioBuscado.rol=="ROL_ADMINISTRADOR"){
-            return res.status(500).send({ mensaje: 'No pueden editar administradores'});
+            return res.status(500).send({ mensaje: 'No pueden eliminar administradores'});
         }
         
         if(req.user.rol=="ROL_CLIENTE"){

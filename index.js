@@ -10,7 +10,7 @@ mongoose.connect('mongodb://localhost:27017/IN6BM2_VENTA_ONLINE_2017096',{useNew
     console.log('Se encuentra conectado a la base de datos.');
 
     app.listen(3000,function(req, res){
-        console.log('IN6BM, eL servidor esta corriendo correctamente (puerto 3000))');
+        console.log('IN6BM, eL servidor esta corriendo correctamente (puerto 3000)');
         RegistrarAdministradorDefault();    
     })
 }).catch(error =>console.log(error))

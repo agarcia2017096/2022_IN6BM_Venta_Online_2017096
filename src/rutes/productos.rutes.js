@@ -7,7 +7,7 @@ const md_autentificacion = require('../middlewares/autentication')
 //RUTAS
 var api = express.Router();
 
-//******************* CRUD CATEGORIAS - FUNCIONES ADMINISTRADOR ****************** */
+//******************* CRUD PRODUCTOS - FUNCIONES ADMINISTRADOR ****************** */
 //REGISTRAR CATEGORIAS
 api.post('/registrarProductos',md_autentificacion.Auth, productosController.RegistrarProductos);
 
@@ -16,4 +16,17 @@ api.get('/obtenerProductos', md_autentificacion.Auth, productosController.Obtene
 
 //OBTENER PRODUCTOS POR ID
 api.get('/obtenerProductosId/:idProducto', md_autentificacion.Auth, productosController.ObtenerProductoId);
+
+//EDITAR PRODUCTOS 
+api.put('/editarProductos/:idProducto', md_autentificacion.Auth, productosController.EditarProductos);
 module.exports = api
+
+//******************* CRUD PRODUCTOS - FUNCIONES CLIENTE ****************** */
+//BUSCAR PRODUCTOS POR NOMBRE
+api.get('/productosNombre/:nombreProducto',md_autentificacion.Auth,productosController.ObtenerNombreProductos)
+
+//BUSCAR CATEGORIAS
+api.get('/obtenerCategorias',md_autentificacion.Auth,productosController.ObtenerCategorias)
+
+//BUSCAR CATEGORIAS POR NOMBRE
+api.get('/categoriasNombre/:nombreCategoria',md_autentificacion.Auth,productosController.ObtenerNombreCategorias)

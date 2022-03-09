@@ -17,18 +17,18 @@ function RegistrarProductos(req, res) {
         parametros.stock!="" && parametros.precio!=""&&parametros.descripcion!=""&&parametros.nombreCategoria!="") {
 
             Productos.find({ nombreProducto : parametros.nombreProducto},{marca:parametros.marca}
-                ,{descripcion:parametros.descripcion}, (err, empresaEncontrada) => {
-                if ( empresaEncontrada.length == 0 ) {
-                    Categorias.findOne({ nombreCategoria: parametros.nombreCategoria}, (err, productosEncontrada)=>{
+                ,{descripcion:parametros.descripcion}, (err, productoEncontrado) => {
+                if ( productoEncontrado.length == 0 ) {
+                    Categorias.findOne({ nombreCategoria: parametros.nombreCategoria}, (err, categoriaEncontrada)=>{
                         if(err) return res.status(400).send({ mensaje: 'Error en la peticion'});
-                        if(!productosEncontrada) return res.status(400).send ({ mensaje: 'Esta productos no existe. Verifique el nombre'})
+                        if(!categoriaEncontrada) return res.status(400).send ({ mensaje: 'Esta Categoría no existe. Verifique el nombre'})
                         var productosModel = new Productos();
                         productosModel.nombreProducto = parametros.nombreProducto;
                         productosModel.marca = parametros.marca;
                         productosModel.descripcion = parametros.descripcion;
                         productosModel.stock = parametros.stock;
                         productosModel.precio = parametros.precio;
-                        productosModel.idCategoria = productosEncontrada._id;
+                        productosModel.idCategoria = categoriaEncontrada._id;
                         
                         productosModel.save((err, empresaGuardada) => {
                             if (err) return res.status(500)
@@ -81,97 +81,103 @@ function ObtenerProductoId(req, res){
     }).populate("idCategoria","nombreCategoria descripcionCategoria")
 }
 
-//**************************** 3. EDITAR CATEGORIAS ******************************* */
-function EditarCategorias(req, res) {
-    var idCat = req.params.idCategoria;
+// Editar los productos producto.
+//• Llevar el control de stock (cantidad) del producto y poderlo editarlo.
+//**************************** 3. EDITAR PRODUCTOS ******************************* */
+function EditarProductos(req, res) {
+    var idProd = req.params.idProducto;
     var parametros = req.body;
 
     if ( req.user.rol == "ROL_CLIENTE" ) return res.status(500)
-    .send({ mensaje: 'No tiene acceso a editar Categorias. Únicamente el Administrador puede hacerlo'});
+    .send({ mensaje: 'No tiene acceso a editar Productos. Únicamente el Administrador puede hacerlo'});
 
-    Categorias.findOne({_id:idCat}, (err,buscarCategoria)=>{
-        if(!buscarCategoria||err)return res.status(404).send( { mensaje: 'La productos no existe, verifique el ID'});
+    Productos.findOne({_id:idProd}, (err,buscarProductos)=>{
+        if(!buscarProductos||err)return res.status(404).send( { mensaje: 'EL productos no existe, verifique el ID'});
 
-        if(parametros.nombreCategoria==""|| parametros.descripcionCategoria=="") return res.status(500)
-        .send({ mensaje: 'Los campos no pueden ser vacíos'});
-    
-        if(parametros.idUsuario|| parametros.idUsuario==""){
-            return res.status(500)
-            .send({ mensaje: 'Solamente se pueden editar los campos de nombre y descripción'});
-    
+        if(parametros.nombreProducto ==""|| parametros.marca=="" || 
+        parametros.stock=="" || parametros.precio==""||parametros.descripcion==""||parametros.nombreCategoria==""){
+        return res.status(500).send({ mensaje: 'Los campos no pueden ser vacíos'});
         }else{
-        if(!buscarCategoria||err)return res.status(404).send( { mensaje: 'La productos no existe, verifique el ID'});
-            if(buscarCategoria.idUsuario !=req.user.sub) return res.status(500).send({mensaje:"No se pueden editar otras productoss que no pertenecen al usuario Logueado"})
-            Categorias.find({ nombreCategoria : parametros.nombreCategoria }, (err, productosEncontrada) => {
-                if ( productosEncontrada.length == 0 ) {
-                    parametros.idUsuario = req.user.sub
-                    Categorias.findByIdAndUpdate({_id:idCat}, parametros, { new: true } ,(err, productosActualizada) => {
-                        if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
-                        if(!productosActualizada) return res.status(404).send( { mensaje: 'Error al editar la productos'});
-                
-                        return res.status(200).send({ productos: productosActualizada});
-                    });
+
+            Productos.find({ nombreProducto : parametros.nombreProducto}, (err, productosEncontrados) => {
+                if ( productosEncontrados.length == 0 ) {
+                        if(parametros.nombreCategoria){
+                            Categorias.findOne({ nombreCategoria: parametros.nombreCategoria}, (err, categoriaEncontrada)=>{
+                                if(!categoriaEncontrada) return res.status(400).send ({ mensaje: 'Esta Categoría no existe. Verifique el nombre'})
+                                if(err) return res.status(400).send({ mensaje: 'Error en la peticion'});
+
+                                parametros.nombreCategoria = categoriaEncontrada._id
+
+                                Productos.findByIdAndUpdate({_id:idProd}, {idCategoria:parametros.nombreCategoria, nombreProducto:parametros.nombreProducto,
+                                    marca:parametros.marca, descripcion:parametros.descripcion, precio:parametros.precio, stock:parametros.stock},
+                                    { new: true } ,(err, productoActualizado) => {
+                                    if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
+                                    if(!productoActualizado) return res.status(404).send( { mensaje: 'Error al editar el productos'});
+    
+                             
+                                    return res.status(200).send({ productos: productoActualizado});
+                                }).populate("idCategoria","nombreCategoria descripcionCategoria")
+
+                            });
+                        }else{
+                            Productos.findByIdAndUpdate({_id:idProd}, parametros,{ new: true } ,(err, productoActualizado) => {
+                                if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
+                                if(!productoActualizado) return res.status(404).send( { mensaje: 'Error al editar el productos'});
+                        
+                                return res.status(200).send({ productos: productoActualizado});
+                            }).populate("idCategoria","nombreCategoria descripcionCategoria")
+                        }
+
+
                 } else {
                     return res.status(500)
-                        .send({ mensaje: 'Este nombre de categoría, ya  se encuentra utilizado. Según la política de la empresa, no es posible repetir nombres de categoría.' });
+                        .send({ mensaje: 'Este producto ya existe. Ingrese otro nombre' });
                 }
             })
         }
     })
 }
 
-//********************************* 4. ELIMINAR CATEGORIAS ********************************* */
-function EliminarCategorias(req, res){
-    const idCat = req.params.idCategoria;
+/* | | | | | | | | | | | | | | | | | | | | | PRODUCTOS  - OPCIONES DE CLIENTE| | | | | | | | | | | | | | | | | | | | |*/
+//********************************* 1 BUSCAR PRODUCTOS POR NOMBRE ********************************* */
+function ObtenerNombreProductos(req, res) {
+    var nomProd = req.params.nombreProducto;
 
-    if ( req.user.rol == "ROL_CLIENTE" ) return res.status(500)
-    .send({ mensaje: 'No tiene acceso a eliminar Categorias. Únicamente el Administrador puede hacerlo'});
+    if ( req.user.rol == "ROL_ADMINISTRADOR" ) return res.status(500)
+    .send({ mensaje: 'No tiene acceso a buscar Productos. Solamente el cliente puede hacerlo'});
 
-    Categorias.find({_id:idCat},(err,productosExistente)=>{
-        if(err) return res.status(404).send({mensaje:'Error, la productos no existe. Verifique el ID'})
-        if(productosExistente.length==0) return res.status(500).send({mensaje:"La productos no existe"})
+    Productos.find( { nombreProducto : { $regex: nomProd, $options: 'i' } }, (err, productoEncontrado) => {
+        if(err) return res.status(500).send({ mensaje: "Error no se ha encontrado el nombre" });
+        if(productoEncontrado==0) return res.status(404).send({ mensaje: "No existen productos con este nombre" });
+        return res.status(200).send({ producto: productoEncontrado })
+    }).populate("idCategoria","nombreCategoria descripcionCategoria")
+}
 
-        Categorias.findOne({nombreCategoria:"CATEGORÍA - POR DEFECTO"},(err,productosEncontrada)=>{
-            if(err) return res.status(400).send({mensaje:'Error en la peticion de buscar productos por defecto'})
-            if(!productosEncontrada){
-               const modeloCategorias = new Categorias()
-               modeloCategorias.nombreCategoria = "CATEGORÍA - POR DEFECTO"
-               modeloCategorias.descripcionCategoria = "Categorías por defecto"
-               modeloCategorias.idUsuario = null;
+//********************************* 2 BUSCAR CATEGORÍAS ********************************* */
+function ObtenerCategorias(req, res) {
 
-                modeloCategorias.save((err,productosGuardada)=>{
-                   if(err) return res.status(400).send({mensaje:'Error en la peticion de guardar la productos por defecto'})
-                   if(!productosGuardada) return res.status(400).send({mensaje:'No se ha podido agregar la productos'})
+    if ( req.user.rol == "ROL_ADMINISTRADOR" ) return res.status(500)
+    .send({ mensaje: 'No tiene acceso a buscar Categorias. Solamente el cliente puede hacerlo'});
 
-                  Productos.updateMany({idCategoria:idCat},{idCategoria:productosGuardada.id},(err,productossActualizadas)=>{
-                    if(err) return res.status(400).send({mensaje:'Error en la peticion de actualizar '})
+    Categorias.find({},(err, CategoriasEncontradas) => {
+        if(err) return res.status(500).send({ mensaje: "Error, no se han encontradon categorías" });
+        if(CategoriasEncontradas==0) return res.status(404).send({ mensaje: "Error, no se encontraron categorias" });
+        return res.status(200).send({ producto: CategoriasEncontradas })
+    })//.populate("idUsuario","nombre")
+}
 
-                    Categorias.findByIdAndDelete(idCat,(err,productosEliminada)=>{
-                        if(err) return res.status(400).send({mensaje:'Error en la peticion al eliminar '})
-                        if(!productosEliminada) return res.status(400).send({mensaje:'No se ha podido eliminar el productos'})
-                        return res.status(200).send({editado:productossActualizadas,productos:productosEliminada})
+//********************************* 3 BUSCAR CATEGORÍAS POR NOMBRE ********************************* */
+function ObtenerNombreCategorias(req, res) {
+    var nomCat = req.params.nombreCategoria;
 
-                    })
+    if ( req.user.rol == "ROL_ADMINISTRADOR" ) return res.status(500)
+    .send({ mensaje: 'No tiene acceso a buscar Productos. Solamente el cliente puede hacerlo'});
 
-
-                })
-               })
-
-            }else{
-            Productos.updateMany({idCategoria:idCat},{idCategoria:productosEncontrada._id},(err,productosEncontrada)=>{
-                if(err) return res.status(400).send({mensaje:'Error en la peticion de actualizar '})
-                Categorias.findByIdAndDelete(idCat,(err,productosEliminada)=>{
-                    if(err) return res.status(400).send({mensaje:'Error en la peticion al eliminar '})
-                    if(!productosEliminada) return res.status(400).send({mensaje:'No se ha podido eliminar el curso'})
-                    return res.status(200).send({curso:productosEliminada})
-                })
-            })
-
-         }      
-
-        })
-    })
-
+    Categorias.find( { nombreCategoria : { $regex: nomCat, $options: 'i' } }, (err, categoriaEncontrada) => {
+        if(err) return res.status(500).send({ mensaje: "Error no se ha encontrado el nombre" });
+        if(categoriaEncontrada==0) return res.status(404).send({ mensaje: "No existen categorias con este nombre" });
+        return res.status(200).send({ producto: categoriaEncontrada })
+    })//.populate("idUsuario","nombre email")
 }
 
         
@@ -179,9 +185,11 @@ function EliminarCategorias(req, res){
 module.exports ={
     RegistrarProductos,
     ObtenerTodosProductos,
-    EditarCategorias,
-    EliminarCategorias,
-    ObtenerProductoId
+    EditarProductos,
+    ObtenerProductoId,
+    ObtenerNombreProductos,
+    ObtenerCategorias,
+    ObtenerNombreCategorias
     
 
 }
