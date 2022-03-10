@@ -38,7 +38,7 @@ function RegistrarCarrito(req, res) {
                                             if(parametros.cantidad<=0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor o igual a cero'});
                                             if(parametros.cantidad>productoEncontrado.stock){//VERIFICAR STOCK
     
-                                                if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'+productoEncontrado.stock})
+                                                if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
     
                                                 return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia:'+productoEncontrado.stock});
                                             }
@@ -92,7 +92,7 @@ function RegistrarCarrito(req, res) {
                                     if(parametros.cantidad<=0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor o igual a cero'});
                                     if(parametros.cantidad>productoEncontrado.stock){//VERIFICAR STOCK
 
-                                        if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'+productoEncontrado.stock})
+                                        if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
 
                                         return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia:'+productoEncontrado.stock});
                                     }
@@ -136,7 +136,7 @@ function RegistrarCarrito(req, res) {
                                                 if(parametros.cantidad<=0||cantidadNueva<=0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor o igual a cero.Ingrese otra cantidad'});
                                                 if(cantidadNueva>productoEncontrado.stock){//VERIFICAR STOCK
         
-                                                    if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'+productoEncontrado.stock})
+                                                    if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
         
                                                     return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia:'+productoEncontrado.stock});
                                                 }
@@ -166,7 +166,7 @@ function RegistrarCarrito(req, res) {
                                              if(parametros.cantidad<=0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor o igual a cero'});
                                              if(parametros.cantidad>productoEncontrado.stock){//VERIFICAR STOCK
          
-                                                 if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'+productoEncontrado.stock})
+                                                 if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
          
                                                  return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia:'+productoEncontrado.stock});
                                              }
@@ -205,57 +205,52 @@ function RegistrarCarrito(req, res) {
     })
 }
 
-/* | | | | | | | | | | | | | | | | | | | | | PRODUCTOS CRUD - OPCIONES DE ADMINISTRADOR| | | | | | | | | | | | | | | | | | | | |*/
-//*************************** 1. REGISTRAR PRODUCTOS *************************** */
+//*************************** 2. ELIMINAR PRODUCTOS CARRITO *************************** */
 function EliminarProductoCarrito(req, res) {
     var idProd = req.params.idProducto
 
     if ( req.user.rol == "ROL_ADMINISTRADOR" ) return res.status(500)
     .send({ mensaje: 'No tiene acceso a registar Carritos. Únicamente el Cliente puede hacerlo.'});
-
+    //VERIFICA SI EL USUARIO POSEE CARIITO
     Carritos.findOne({idUsuario:req.user.sub},(err, carritoUsuario)=>{
-        if(err) return res.status(500).send({ mensaje:"Error en la peticion"})
+        if(err) return res.status(500).send({ mensaje:"Error en la peticion, el usuario no posee carritos"})
         if(!carritoUsuario) return res.status(500).send({ mensaje:"El usuario no posee carritos, no puede acceder a esta función"})
+            //VERIFICA SI EL PRODUCTO INGRESADO EXISTE EN EL ARRAY DE CARRITO
+            console.log(carritoUsuario.compras.length)
+            var finalFord = 0                                    
+               //RECORRE EL ARRAY
+                for (let i = 0; i <carritoUsuario.compras.length;i++){
+                        if ( carritoUsuario.compras[i].productos.idProducto == idProd){
+                            console.log("producto existe "+carritoUsuario.compras[i].productos.idProducto)
+                            var idELiminar = carritoUsuario.compras[i]._id
+                            console.log(idELiminar)
 
-        Productos.findOne({ _id :idProd}, (err, productoEncontrado) => {
-            if(err) return res.status(500).send({ mensaje: 'Error, ste producto no existe. Verifique el ID'});
-            if(!productoEncontrado) return res.status(500).send ({ mensaje: 'Este producto no existe. Verifique el ID'})
-
-            for (let i = 0; i <carritoUsuario.compras.length;i++){
-
-                if ( carritoUsuario.compras[i].productos.nombreProducto == productoEncontrado.nombreProducto){
-                    var idELiminar = carritoUsuario.compras[i].productos.nombreProducto
-
-                    console.log(idELiminar)
-                    console.log({compras:[{productos:{nombreProducto:carritoUsuario.compras[i].productos.nombreProducto}}]})
-                    console.log({compras:[{productos:{nombreProducto:carritoUsuario.compras[i].productos.nombreProducto}}]})
-
-
-                    var subtotalAgregar = (carritoUsuario.compras[i].productos.cantidad*productoEncontrado.precio)
-                    
-                    Carritos.findOneAndUpdate({_idUsuarioid:req.user.sub},{ 
-                        //compras.slice(0,subtotalAgregar)
-                        $pusll: {
-                            compras: [{
-                                productos:
-                                {idProducto:idProd,nombreProducto: productoEncontrado.nombreProducto,
-                                cantidad: carritoUsuario.compras[i].productos.cantidad, precio: productoEncontrado.precio,subTotal: subtotalAgregar }
-
-                            }]
+                            var totalModificado = ((carritoUsuario.total)-(carritoUsuario.compras[i].productos.subTotal))
+                            Carritos.findOneAndUpdate({_idUsuarioid:req.user.sub},{total:totalModificado,
+                                $pull: {
+                                    compras: {_id:idELiminar}
+                                }
+                            }, { new: true},  
+                                (err, carritoActualizado)=>{  
+                                    console.log(err)
+                                    if(err) return res.status(500).send({ mensaje: "Error en la peticion de modificar carrito"});
+                                    if(!carritoActualizado) return res.status(500).send({ mensaje: 'Error al modificar el carrito'});
+            
+                                    return res.status(200).send({ carrito: carritoActualizado })
+                            }).populate('idUsuario','nombre');
+                        }else{
+                            finalFord++ 
+                            console.log("ford "+finalFord)                                 
+                            if(finalFord == carritoUsuario.compras.length){
+                                return res.status(200).send({mensaje:'El producto no existe en el carrito'})
+                            }
                         }
-                    }, { new: true},  
-                        (err, carritoActualizado)=>{  
-                            if(err) return res.status(500).send({ mensaje: "Error en la peticion de modificar carrito"});
-                            if(!carritoActualizado) return res.status(500).send({ mensaje: 'Error al modificar el carrito'});
-    
-                            return res.status(200).send({ carrito: carritoActualizado })
-                    }).populate('idUsuario','nombre');                                    
+                    
                 }
 
-            }
         })
 
-    })
+
 }
 
 

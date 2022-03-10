@@ -180,6 +180,26 @@ function ObtenerNombreCategorias(req, res) {
     })//.populate("idUsuario","nombre email")
 }
 
+//********************************* 2 BUSCAR CATEGORÍAS ********************************* */
+function CatalogoProductosMasVendidos(req, res) {
+
+    if ( req.user.rol == "ROL_ADMINISTRADOR" ) return res.status(500)
+    .send({ mensaje: 'No tiene acceso a buscar Catalogo de prosuctos más venididos. Solamente el cliente puede hacerlo'});
+
+    
+    Productos.find({vendido:number},(err, productosVendidos) => {
+        if(err) return res.status(500).send({ mensaje: "Error, No se han vendido productos" });
+        return res.status(500).send({ catalaogo: productosVendidos });
+        if(productosVendidos.length==0) return res.status(500).send({ mensaje: "No existen productos" });
+
+        for(var i = 0; i < productosVendidos.length;i++){
+            if(productosVendidos[i].vendido!=undefined){
+                console.log("Nombre: "+productosVendidos[i].nombreProducto+" Cantidad: "+productosVendidos[i].vendido)
+            }
+        }
+    })
+}
+
         
 //********************************* EXPORTAR ********************************* */
 module.exports ={
@@ -189,7 +209,8 @@ module.exports ={
     ObtenerProductoId,
     ObtenerNombreProductos,
     ObtenerCategorias,
-    ObtenerNombreCategorias
+    ObtenerNombreCategorias,
+    CatalogoProductosMasVendidos
     
 
 }

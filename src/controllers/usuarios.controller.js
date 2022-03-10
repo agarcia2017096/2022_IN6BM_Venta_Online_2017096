@@ -1,6 +1,8 @@
 //ALEJANDRO JAVIER GARCIA GARCIA -2017096 - PE6BM2
 
 const Usuarios = require('../models/usuarios.model');
+const Facturas = require('../models/facturas.model');
+
 const bcrypt = require('bcrypt-nodejs');
 const jwt = require('../services/jwt');
 
@@ -21,12 +23,16 @@ function Login(req, res) {
                 (err, verificacionPassword)=>{//TRUE OR FALSE
                     if ( verificacionPassword ) {
                         if(parametros.obtenerToken === 'true'){
-                            return res.status(200)
-                                .send({ token: jwt.crearToken(usuarioEncontrado) })
+                            Facturas.find({idUsuario:usuarioEncontrado._id}, (err, facturasEncontradas) => {
+                                if(err) return res.status(500).send({ mensaje: "Error en la peticion, no existen facturas del cliente" });
+                                if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado), registro: "*El cliente no posee facturas.*"});
+                                return res.status(200)
+                                .send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado) , registro:"FACTURAS:", facturas:facturasEncontradas })                            }).populate('idUsuario',"nombre")
+
                         } else {
                             usuarioEncontrado.password = undefined;
                             return  res.status(200)
-                                .send({ usuario: usuarioEncontrado })
+                                .send({ usuario: usuarioEncontrado})
                         }
 
                     
@@ -187,6 +193,16 @@ function EditarPerfilUsuario(req, res) {
             })
          }
      })
+}
+
+//*************************** 2. MOSTRAR FACTURA *************************** */
+function MostrarFacturas(req, res){
+
+    Facturas.find({idUsuario:req.user.sub}, (err, facturasEncontradas) => {
+        if(err) return res.status(500).send({ mensaje: "Error en la peticion, no existen facturas del cliente" });
+        if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({ mensaje: "El cliente no posee facturas."});
+        return res.status(200).send({ facturas: facturasEncontradas })
+    }).populate('idUsuario',"nombre")
 }
 
 //********************************* EXPORTAR ********************************* */
