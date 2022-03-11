@@ -10,6 +10,8 @@ function RegistrarProductos(req, res) {
     .send({ mensaje: 'No tiene acceso a registar Productos. Únicamente el Administrador puede hacerlo.'});
 
     var parametros = req.body;
+    if(parametros.vendido) return res.status(500).send({ mensaje: "EL campo vendido no se puede agregar" });
+
 
     if(parametros.nombreProducto && parametros.marca && 
         parametros.stock && parametros.precio&&parametros.descripcion&&parametros.nombreCategoria&& 
@@ -93,6 +95,8 @@ function EditarProductos(req, res) {
 
     Productos.findOne({_id:idProd}, (err,buscarProductos)=>{
         if(!buscarProductos||err)return res.status(404).send( { mensaje: 'EL productos no existe, verifique el ID'});
+
+        if(parametros.vendido) return res.status(500).send({ mensaje: "EL campo vendido no se puede agregar" });
 
         if(parametros.nombreProducto ==""|| parametros.marca=="" || 
         parametros.stock=="" || parametros.precio==""||parametros.descripcion==""||parametros.nombreCategoria==""){
@@ -186,18 +190,24 @@ function CatalogoProductosMasVendidos(req, res) {
     if ( req.user.rol == "ROL_ADMINISTRADOR" ) return res.status(500)
     .send({ mensaje: 'No tiene acceso a buscar Catalogo de prosuctos más venididos. Solamente el cliente puede hacerlo'});
 
-    
-    Productos.find({vendido:number},(err, productosVendidos) => {
+    Productos.find({vendido:{$gte:0}},(err, productosVendidos) => {
         if(err) return res.status(500).send({ mensaje: "Error, No se han vendido productos" });
-        return res.status(500).send({ catalaogo: productosVendidos });
         if(productosVendidos.length==0) return res.status(500).send({ mensaje: "No existen productos" });
 
+        //ALTERNATIVA PARA ENCONTRAR PRODUCTOS CON CAMPO VENDIDO
+       /* var posicion = 0
+        let catalogoProductos = []
         for(var i = 0; i < productosVendidos.length;i++){
-            if(productosVendidos[i].vendido!=undefined){
-                console.log("Nombre: "+productosVendidos[i].nombreProducto+" Cantidad: "+productosVendidos[i].vendido)
+             console.log(posicion)
+
+            if(productosVendidos[i].vendido != undefined){
+               catalogoProductos[posicion] = " -Cantidad vendido: "+productosVendidos[i].vendido+" -Nombre: "+productosVendidos[i].nombreProducto+" - Precio: Q"+productosVendidos[i].precio+
+               posicion++
             }
-        }
-    })
+        }*/
+        
+        return res.status(500).send({mensaje:"PRODUCTOS MÁS VENDIDOS", catalaogo: productosVendidos });
+    }).sort({  vendido:-1})
 }
 
         
