@@ -1,3 +1,5 @@
+//ALEJANDRO JAVIER GARCIA GARCIA -2017096 - PE6BM2
+
 const jwt_simple = require('jwt-simple');
 const moment = require('moment');
 const secret = 'clave_secreta_IN6BM2';

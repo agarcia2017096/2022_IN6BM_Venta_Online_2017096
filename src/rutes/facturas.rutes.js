@@ -4,6 +4,7 @@ const express = require('express');
 const facturasController = require('../controllers/facturas.controller')
 const md_autentificacion = require('../middlewares/autentication')
 
+
 //RUTAS
 var api = express.Router();
 
@@ -13,16 +14,17 @@ api.post('/registarFacturas',md_autentificacion.Auth, facturasController.Regista
 //MOSTRAR FACTURAS 
 api.get('/mostrarFacturas',md_autentificacion.Auth, facturasController.MostrarFacturas);
 
-///////////////////////////////// GESTION ADMINITRADOR /////////////////////////////////
+//******************************* GESTION ADMINITRADOR ********************************//
 //MOSTRAR FACTURAS  QUE TIENENE SUS USUARIO
 api.get('/mostrarFacturasUsuarios',md_autentificacion.Auth, facturasController.MostrarFacturasUsuarios);
 
 //MOSTRAR PRODUCTOS FACTURAS
-api.get('/mostrarroductosFacturas/:idFactura',md_autentificacion.Auth, facturasController.MostrarProductosFacturas);
+api.get('/mostrarProductosFacturas/:idFactura',md_autentificacion.Auth, facturasController.MostrarProductosFacturas);
 
 //MOSTRAR PRODUCTOS AGOTADOS
 api.get('/mostrarProductosAgotados',md_autentificacion.Auth, facturasController.MostrarProductosAgotados);
 
-//MOSTRAR PRODUCTOS MAS VENDIDOS
-//api.get('/mostrarProductosMasVendidos',md_autentificacion.Auth, facturasController.MostrarProductosMasVendidos);
+//BUSCAR PRODUCTOS VENDIDOS
+api.get('/productosVendidos',md_autentificacion.Auth,facturasController.BuscarProductosVendidos)
+
 module.exports = api

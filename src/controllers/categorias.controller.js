@@ -27,8 +27,8 @@ function RegistrarCategorias(req, res) {
                             if(!categoriaGuardada) return res.status(500)
                                 .send({ mensaje: 'Error al agregar la categoria'});
                             
-                            return res.status(200).send({ categoria: categoriaGuardada });
-                        });
+                            return res.status(200).send({ mensaje:"REGISTRO DE CATEGORÍAS EXITOSO",categoria: categoriaGuardada });
+                        })
                 } else {
                     return res.status(500)
                         .send({ mensaje: 'Este nombre de categoría, ya  se encuentra utilizado. Según la política de la empresa, no es posible repetir nombres de categoría.' });
@@ -49,9 +49,9 @@ function ObtenerCategoriasAdministrador(req, res) {
 
     Categorias.find({idUsuario:req.user.sub}, (err, categoriasEncontradas) => {
         if(err) return res.status(500).send({ mensaje: "Error en la peticion" });
-        if(!categoriasEncontradas) return res.status(500).send({ mensaje: "Error al obtener las categorias."});
-        return res.status(200).send({ categoria: categoriasEncontradas })
-    })//.populate('idUsuario',"")
+        if(!categoriasEncontradas||categoriasEncontradas.length==0) return res.status(500).send({ mensaje: "No hay retorno al buscar categorias, verifique la base de datos"});
+        return res.status(200).send({ mensaje:"BUSQUEDA DE CATEGORÍAS EXITOSA",categoria: categoriasEncontradas })
+    })//.populate('idUsuario',"nombre")
 }
 //PRUEBA DE POPULATE
 /*async function ObtenerCategoriasAdministrador (req,res){
@@ -64,9 +64,6 @@ function ObtenerCategoriasAdministrador(req, res) {
     }
 
 }*/
-
-
-
 
 //Editar una categoría y eliminarla.
 //**************************** 3. EDITAR CATEGORIAS ******************************* */
@@ -97,7 +94,7 @@ function EditarCategorias(req, res) {
                         if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
                         if(!categoriaActualizada) return res.status(404).send( { mensaje: 'Error al editar la categoria'});
                 
-                        return res.status(200).send({ categoria: categoriaActualizada});
+                        return res.status(200).send({ mensaje:"EDICIÓN DE CATEGORÍA EXITOSA",categoria: categoriaActualizada});
                     });
                 } else {
                     return res.status(500)
@@ -117,51 +114,66 @@ function EliminarCategorias(req, res){
     if ( req.user.rol == "ROL_CLIENTE" ) return res.status(500)
     .send({ mensaje: 'No tiene acceso a eliminar Categorias. Únicamente el Administrador puede hacerlo'});
 
-    Categorias.find({_id:idCat},(err,categoriaExistente)=>{
+    Categorias.findOne({_id:idCat},(err,categoriaExistente)=>{
         if(err) return res.status(404).send({mensaje:'Error, la categoria no existe. Verifique el ID'})
-        if(categoriaExistente.length==0) return res.status(500).send({mensaje:"La categoria no existe"})
-
-        Categorias.findOne({nombreCategoria:"CATEGORÍA - POR DEFECTO"},(err,categoriaEncontrada)=>{
-            if(err) return res.status(400).send({mensaje:'Error en la peticion de buscar categoria por defecto'})
-            if(!categoriaEncontrada){
-               const modeloCategorias = new Categorias()
-               modeloCategorias.nombreCategoria = "CATEGORÍA - POR DEFECTO"
-               modeloCategorias.descripcionCategoria = "Categorías por defecto"
-               modeloCategorias.idUsuario = null;
-
-                modeloCategorias.save((err,categoriaGuardada)=>{
-                   if(err) return res.status(400).send({mensaje:'Error en la peticion de guardar la categoria por defecto'})
-                   if(!categoriaGuardada) return res.status(400).send({mensaje:'No se ha podido agregar la categoria'})
-
-                  Productos.updateMany({idCategoria:idCat},{idCategoria:categoriaGuardada.id},(err,categoriasActualizadas)=>{
-                    if(err) return res.status(400).send({mensaje:'Error en la peticion de actualizar '})
-
-                    Categorias.findByIdAndDelete(idCat,(err,categoriaEliminada)=>{
-                        if(err) return res.status(400).send({mensaje:'Error en la peticion al eliminar '})
-                        if(!categoriaEliminada) return res.status(400).send({mensaje:'No se ha podido eliminar el categoria'})
-                        return res.status(200).send({editado:categoriasActualizadas,categoria:categoriaEliminada})
-
-                    })
-
-
-                })
-               })
-
-            }else{
-            Productos.updateMany({idCategoria:idCat},{idCategoria:categoriaEncontrada._id},(err,categoriaEncontrada)=>{
-                if(err) return res.status(400).send({mensaje:'Error en la peticion de actualizar '})
-                Categorias.findByIdAndDelete(idCat,(err,categoriaEliminada)=>{
+        if(categoriaExistente==null||!categoriaExistente) return res.status(500).send({mensaje:"La categoria no existe. Verifique el ID"})
+//VERIFICA SI LA CATEGORIAS ESTA EN PRODUCTOS
+        Productos.find({idCategoria:idCat},(err,productosEncontrados)=>{
+            if(err) return res.status(404).send({mensaje:'Error, la categoria no existe.'})    
+            //SI NO ENUCNTRA CATEGORIAS CON REFERENCIA EN PRODUCTOS 
+            if(productosEncontrados.length==0){
+                //ELIMINAR CATEGORIA
+                Categorias.findByIdAndDelete(idCat,(err,categoriaEliminadaSinEdicion)=>{
                     if(err) return res.status(400).send({mensaje:'Error en la peticion al eliminar '})
-                    if(!categoriaEliminada) return res.status(400).send({mensaje:'No se ha podido eliminar el curso'})
-                    return res.status(200).send({curso:categoriaEliminada})
+                    if(!categoriaEliminadaSinEdicion) return res.status(400).send({mensaje:'No se ha podido eliminar el categoria'})
+                    return res.status(200).send({mensaje:"CATEGORÍA ELIMINADA",categoria:categoriaEliminadaSinEdicion})
                 })
-            })
 
-         }      
+            }else{//LA CATEGORIA SE ENCUNTRA REFERENCIADA EN PRODUCTOS
+                Categorias.findOne({nombreCategoria:"CATEGORÍA - POR DEFECTO"},(err,categoriaEncontrada)=>{
+                    if(err) return res.status(400).send({mensaje:'Error en la peticion de buscar categoria por defecto'})
+        
+                    if(categoriaEncontrada==null){
+                       const modeloCategorias = new Categorias()
+                       modeloCategorias.nombreCategoria = "CATEGORÍA - POR DEFECTO"
+                       modeloCategorias.descripcionCategoria = "Categorías por defecto"
+                       modeloCategorias.idUsuario = null;
+        
+                        modeloCategorias.save((err,categoriaGuardada)=>{
+                           if(err) return res.status(400).send({mensaje:'Error en la peticion de guardar la categoria por defecto'})
+                           if(!categoriaGuardada) return res.status(400).send({mensaje:'No se ha podido agregar la categoria'})
+        
+                          Productos.updateMany({idCategoria:idCat},{idCategoria:categoriaGuardada.id},(err,categoriasActualizadas)=>{
+                            if(err) return res.status(400).send({mensaje:'Error en la peticion de actualizar '})
+        
+                            Categorias.findByIdAndDelete(idCat,(err,categoriaEliminada)=>{
+                                if(err) return res.status(400).send({mensaje:'Error en la peticion al eliminar '})
+                                if(!categoriaEliminada) return res.status(400).send({mensaje:'No se ha podido eliminar el categoria'})
+                                return res.status(200).send({mensaje:"CREACIÓN DE CATEGORÍA DEFAULT",categoriaGuardada:categoriaGuardada,mensaje:"EDICIÓN EXITOSA",editado:categoriasActualizadas,mensaje:"CATEGORÍA ELIMINADA",categoria:categoriaEliminada})
+        
+                            })
+        
+        
+                        })
+                       })
+        
+                    }else{
 
+                    Productos.updateMany({idCategoria:idCat},{idCategoria:categoriaEncontrada._id},(err,categoriaEncontrada)=>{
+                        if(err) return res.status(400).send({mensaje:'Error en la peticion de actualizar '})
+                        Categorias.findByIdAndDelete(idCat,(err,categoriaEliminada)=>{
+                            if(err) return res.status(400).send({mensaje:'Error en la peticion al eliminar '})
+                            if(!categoriaEliminada) return res.status(400).send({mensaje:'No se ha podido eliminar la categoria'})
+                            return res.status(200).send({mensaje:"ELIMINACIÓN EXITOSA",curso:categoriaEliminada,mensaje:"EDICIÓN EXITOSA",editado:categoriasActualizadas,})
+                        })
+                    })
+        
+                 }      
+        
+                })
+            }
         })
     })
-
 }
 
         

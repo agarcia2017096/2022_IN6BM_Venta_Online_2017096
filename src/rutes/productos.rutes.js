@@ -19,13 +19,12 @@ api.get('/obtenerProductosId/:idProducto', md_autentificacion.Auth, productosCon
 
 //EDITAR PRODUCTOS 
 api.put('/editarProductos/:idProducto', md_autentificacion.Auth, productosController.EditarProductos);
-module.exports = api
 
 //******************* CRUD PRODUCTOS - FUNCIONES CLIENTE ****************** */
 //BUSCAR PRODUCTOS POR NOMBRE
 api.get('/productosNombre/:nombreProducto',md_autentificacion.Auth,productosController.ObtenerNombreProductos)
 
-//BUSCAR CATEGORIAS
+//BUSCAR CATEGORIAS 
 api.get('/obtenerCategorias',md_autentificacion.Auth,productosController.ObtenerCategorias)
 
 //BUSCAR CATEGORIAS POR NOMBRE
@@ -33,3 +32,5 @@ api.get('/categoriasNombre/:nombreCategoria',md_autentificacion.Auth,productosCo
 
 //BUSCAR CATALOGO DE PRODUCTOS CON MAYOR CANTIDAD DE VENTAS
 api.get('/catalogoProductos',md_autentificacion.Auth,productosController.CatalogoProductosMasVendidos)
+
+module.exports = api

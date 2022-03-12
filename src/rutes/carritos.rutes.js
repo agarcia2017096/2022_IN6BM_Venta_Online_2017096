@@ -9,6 +9,7 @@ var api = express.Router();
 
 //LOGIN DE LA APLICACIÓN 
 api.post('/registrarCarrito',md_autentificacion.Auth, carritosController.RegistrarCarrito);
+
 //ELIMINAR PRODUCTOS CARRITO 
 api.delete('/eliminarProductosCarritos/:idProducto',md_autentificacion.Auth, carritosController.EliminarProductoCarrito);
 

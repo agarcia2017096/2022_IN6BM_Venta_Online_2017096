@@ -24,10 +24,19 @@ function Login(req, res) {
                     if ( verificacionPassword ) {
                         if(parametros.obtenerToken === 'true'){
                             Facturas.find({idUsuario:usuarioEncontrado._id}, (err, facturasEncontradas) => {
+
                                 if(err) return res.status(500).send({ mensaje: "Error en la peticion, no existen facturas del cliente" });
-                                if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado), registro: "*El cliente no posee facturas.*"});
+                                //USUARIO LOGUEADO ADMINISTRADOR NO PUEDE TENER FACTURAS NO TETORNA REGISTRO
+                                if(usuarioEncontrado.rol == "ROL_ADMINISTRADOR"){
+                                    if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado)});
+                                }
+                                //NO EXISTEN FACTURAS EN CLIENTE
+                                if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado), registro: "*El usuario no posee facturas.*"});
+                                
+                                //EXISTEN FACTURAS EN CLIENTES
                                 return res.status(200)
-                                .send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado) , registro:"FACTURAS:", facturas:facturasEncontradas })                            }).populate('idUsuario',"nombre")
+                                .send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado) , registro:"FACTURAS:", facturas:facturasEncontradas })
+                            }).populate('idUsuario',"nombre")
 
                         } else {
                             usuarioEncontrado.password = undefined;
@@ -49,7 +58,7 @@ function Login(req, res) {
     })
  }else{
     return res.status(500)
-    .send({ mensaje: 'Debe llenar los campos necesarios'});
+    .send({ mensaje: 'Debe llenar los campos necesarios (email, password, obtenerToken)'});
  } 
 }
 
@@ -79,7 +88,7 @@ function RegistrarClientes(req, res) {
                             if(!usuarioGuardado) return res.status(500)
                                 .send({ mensaje: 'Error al agregar el Usuario'});
                             
-                            return res.status(200).send({ usuario: usuarioGuardado });
+                            return res.status(200).send({ mensaje:"REGISTRO DE CLIENTE EXITOSO",usuario: usuarioGuardado });
                         });
                     });                    
                 } else {
@@ -89,7 +98,7 @@ function RegistrarClientes(req, res) {
             })
     }else{
         return res.status(500)
-        .send({ mensaje: 'Debe llenar los campos necesarios'});
+        .send({ mensaje: 'Debe llenar los campos necesarios (nombre, apellido, email, password)'});
     }
 }
 
@@ -105,7 +114,7 @@ function EditarPerfilUsuario(req, res) {
         if(!usuarioBuscado) return res.status(404).send({mensaje: "Error, el usuario no existe. Verifique el ID"})
 
         if(usuarioBuscado.rol=="ROL_ADMINISTRADOR"){
-            return res.status(500).send({ mensaje: 'No pueden editar administradores'});
+            return res.status(500).send({ mensaje: 'No es posible editar Administradores'});
         }else{//Acepta solo ID de clientes
             if(req.user.rol=="ROL_ADMINISTRADOR"){//Administrador puede editar Cientes
                 if(parametros.email || parametros.password|| parametros.email==""
@@ -148,7 +157,7 @@ function EditarPerfilUsuario(req, res) {
                     Usuarios.findByIdAndUpdate(idUser, parametros, { new: true } ,(err, usuarioActualizado) => {
                         if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
                         if(!usuarioActualizado) return res.status(404).send( { mensaje: 'Error al editar la empresa'});
-                        return res.status(200).send({ empresa: usuarioActualizado});
+                        return res.status(200).send({ usuario: usuarioActualizado});
                     });
 
                 }else{
@@ -165,6 +174,7 @@ function EditarPerfilUsuario(req, res) {
  //ELIMINAR USUARIOS
  function EliminarUsuarios(req, res){
      var idUser = req.params.idUsuario
+
      Usuarios.findOne({_id:idUser},(err,usuarioBuscado)=>{
         if(err) return res.status(500).send({mensaje: "Error, el usuario no existe. Verifique el ID"});
         if(!usuarioBuscado) return res.status(404).send({mensaje: "Error, el usuario no existe. Verifique el ID"})
@@ -174,24 +184,29 @@ function EditarPerfilUsuario(req, res) {
         }
         
         if(req.user.rol=="ROL_CLIENTE"){
-            if(usuarioBuscado._id == req.user.sub){
-                Usuarios.findByIdAndDelete(req.user.sub,(err,usuarioEliminado)=>{
+            //ELIMINAR PROPIA CUENTA
+            console.log(idUser)
+            console.log(req.user.sub)
+
+            if(idUser == req.user.sub){
+                Usuarios.findByIdAndDelete({_id:req.user.sub},(err,usuarioEliminado)=>{
                     if(err) return res.status(500).send({mensaje: "Error, el usuario no existe"});
                     if(!usuarioEliminado) return res.status(404).send({mensaje: "Error, el usuario no existe"})
             
-                    return  res.status(200).send({usuario:usuarioEliminado});
+                    return  res.status(200).send({mensaje:"ELIMINACION EXITOSA",usuario:usuarioEliminado});
                 })
             }else{
                 return res.status(500).send({ mensaje: 'No puede eliminar otros clientes'});
             }
-         }else{
-            Usuarios.findByIdAndDelete(req.user.sub,(err,usuarioEliminado)=>{
+            //ELIMINACION DEL ADMINITRADOR
+        }else{
+            Usuarios.findByIdAndDelete({_id:idUser},(err,usuarioEliminado)=>{
                 if(err) return res.status(500).send({mensaje: "Error, el usuario no existe"});
                 if(!usuarioEliminado) return res.status(404).send({mensaje: "Error, el usuario no existe"})
         
-                return  res.status(200).send({usuario:usuarioEliminado});
+                return  res.status(200).send({mensaje:"ELIMINACION EXITOSA",usuario:usuarioEliminado});
             })
-         }
+        }
      })
 }
 

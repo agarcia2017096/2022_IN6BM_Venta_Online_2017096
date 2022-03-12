@@ -1,5 +1,4 @@
 //ALEJANDRO JAVIER GARCIA GARCIA -2017096 - PE6BM2
-
 const mongoose = require('mongoose');
 const app = require('./app');
 const Usuarios = require('./src/models/usuarios.model');
@@ -14,8 +13,6 @@ mongoose.connect('mongodb://localhost:27017/IN6BM2_VENTA_ONLINE_2017096',{useNew
         RegistrarAdministradorDefault();    
     })
 }).catch(error =>console.log(error))
-
-
 
 //********************** 1. REGISTRAR ADMINISTRADOR POR DEFECTO ************** */
 function RegistrarAdministradorDefault(req, res) {

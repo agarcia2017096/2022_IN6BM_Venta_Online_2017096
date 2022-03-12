@@ -36,7 +36,7 @@ function RegistrarCarrito(req, res) {
                             if ( productoEncontrado.length != 0 ) {//PRODUCTO EXISTE
                                 //BUSCO EN CARRITO EL ID_USUARIO
                                 Carritos.findOne({idUsuario:req.user.sub}, (err, productoCarrito) => {
-                                    console.log(productoCarrito.compras.length===0)
+                                    //console.log(productoCarrito.compras.length===0)
                                         //VERIFICA SI EL ARRAY DE PRODUCTO ESTA VACIO
                                         if ( productoCarrito.compras.length===0) {//EL PRODUCTO NO SE ENCUNTRA EN EL CARRITO
                                             //VERIFICA SI LA CANTIDAD ES 0
@@ -46,9 +46,10 @@ function RegistrarCarrito(req, res) {
                                                 //PRODUCTO AGOTADO
                                                 if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
     
-                                                return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia:'+productoEncontrado.stock});
+                                                return res.status(500).send({ mensaje: 'Por ahora no puede comprar más artículos. La cantidad del producto en su carrito es mayor al stock.'});
                                             }
                                             //MULTIPLICACION DEL SUBTOTAL
+                                            var subtotalAgregar = 0
                                             var subtotalAgregar = (parametros.cantidad*productoEncontrado.precio)
                                             //MODIFICA EL ARRAY Y AGAREGA PRODUCTO
                                             Carritos.findByIdAndUpdate({_id:carrritoUsuario._id},{ total: (productoCarrito.total+ subtotalAgregar), 
@@ -65,7 +66,7 @@ function RegistrarCarrito(req, res) {
                                                     if(err) return res.status(500).send({ mensaje: "Error en la peticion de modificar carrito"});
                                                     if(!carritoActualizado) return res.status(500).send({ mensaje: 'Error al modificar el carrito'});
                             
-                                                    return res.status(200).send({ mensaje:"Se ha creado el carrito para el usuario",carrito: carritoActualizado })
+                                                    return res.status(200).send({ mensaje:"SE HA CREADO EL CARRITO",carrito: carritoActualizado })
                                             }).populate('idUsuario','nombre apellido email');                                    
                 
                                         }else{
@@ -95,8 +96,8 @@ function RegistrarCarrito(req, res) {
                         if ( productoEncontrado != 0 ) {//PRODUCTO EXISTE
                             
                             Carritos.findOne({idUsuario:carritoUsuario.idUsuario}, (err, productoCarrito) => {
-                                if(err) console.log(err)
-                                if(!productoCarrito) console.log(productoCarrito)
+                                //if(err) //console.log(err)
+                                //if(!productoCarrito) //console.log(productoCarrito)
 
                                 //VERIFICACION SI PRODUCTO ESTA EN CARRITO
                                 if ( productoCarrito.compras ===0||productoCarrito.compras.length==0) {//NO HAY PRODUCTOS EN EL CARRITO
@@ -106,12 +107,12 @@ function RegistrarCarrito(req, res) {
 
                                         if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
 
-                                        return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia:'+productoEncontrado.stock});
+                                        return res.status(500).send({ mensaje: 'Por ahora no puede comprar más artículos. La cantidad del producto en su carrito es mayor al stock.'});
                                     }
-
-                                    var subtotalAgregar = (parametros.cantidad*productoEncontrado.precio)
+                                    var subtotalAgregar = 0
+                                     subtotalAgregar = (parametros.cantidad*productoEncontrado.precio)
                                     //EDICION CARRITO DEL CARRITO
-                                    console.log("Ejecucion de no hay productos en carrito")
+                                    //console.log("Ejecucion de no hay productos en carrito")
                                     Carritos.findByIdAndUpdate({_id:productoCarrito._id},{ total: (productoCarrito.total+ subtotalAgregar), 
                                         $push: {
                                             compras: [{
@@ -126,88 +127,116 @@ function RegistrarCarrito(req, res) {
                                             if(err) return res.status(500).send({ mensaje: "Error en la peticion de modificar carrito"});
                                             if(!carritoActualizado) return res.status(500).send({ mensaje: 'Error al modificar el carrito'});
                     
-                                            return res.status(200).send({ carrito: carritoActualizado })
+                                            return res.status(200).send({mensaje:"REGISTRO EXITOSO", carrito: carritoActualizado })
                                     }).populate('idUsuario','nombre apellido email');                                    
         
                                 
                                 }else{//HAY OTROS PRODUCTOS EN EL CARRITO
-                                    console.log("Ejecucion de hay mas productos en carrito")
+                                    //console.log("Ejecucion de hay mas productos en carrito")
                                     // RECORRE EL ARRay - ENCONTRAR COINCIDENCIAS
+                                    var recorridoFord = 0
+                                    var encontrado = false
+
                                     for (let i = 0; i <productoCarrito.compras.length;i++){
                                         //VERIFICA SI EL PRODUCTO EXISTE
-
                                         //SI EL PRODUCTO YA ESTA EN UN OBJETO - CAMBIAR CANTIDAD Y TOTALES
-                                        if ( productoCarrito.compras[i].productos.nombreProducto == productoEncontrado.nombreProducto){
-                                            console.log("El producto es ya se encuntra en el carrito")
+
+                                        if ( productoCarrito.compras[i].productos.nombreProducto == parametros.nombreProducto){
+                                            //console.log("El producto es ya se encuntra en el carrito")
                                                 var idProducto =productoCarrito.compras[i].productos.idProducto
                                                 var cantidadAnterior = productoCarrito.compras[i].productos.cantidad
 
-                                                var cantidadNueva = 0
 
-                                                cantidadNueva = ( (parseInt(cantidadAnterior))+(parseInt(parametros.cantidad)))                                               
+
+
+                                                var cantidadNueva = 0
+                                                
+                                                cantidadNueva =( (parseInt(cantidadAnterior))+(parseInt(parametros.cantidad)))                                               
                                                 
                                                 //CANTIDAD INGRESADA NO PUEDE SER 0 
-                                                if(cantidadNueva<=0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor o igual a cero.Ingrese otra cantidad'});
+                                                if(parametros.cantidad==0) return res.status(500).send({ mensaje: 'La cantidad ingresada no puede ser igual a 0. Ingrese otra cantidad.',stock:'Stock actual del producto '+productoEncontrado.stock});
+                                                if(cantidadNueva< 0 ) return res.status(500).send({ mensaje: 'La nueva cantidad a comprar no es válida según el stock del producto. Verifique su compra.',stock:'Stock actual del producto '+productoEncontrado.stock});
+                                                if(cantidadNueva==0 ) return res.status(500).send({ mensaje: 'La nueva cantidad a comprar es 0. Por lo que se le aconseja eliminar el producto del carrito, si ya no desea comprar',stock:'Stock actual del producto '+productoEncontrado.stock});
+
 
                                                 if(cantidadNueva>productoEncontrado.stock){//VERIFICAR STOCK
         
                                                     if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
         
-                                                    return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia :'+productoEncontrado.stock});
+                                                    return res.status(500).send({ mensaje: 'Por ahora no puede comprar más artículos. La cantidad del producto en su carrito es mayor al stock. '})
                                                 }
-                                                if(cantidadNueva<0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor a 0.Ingrese otra cantidad. Stock de producto :'+productoEncontrado.stock});
 
-                                                
+                                                //console.log("MODICA CANTIDAD CARRITO")
+
+                                                var subtotalAgregarNuevo = 0
                                                 var subtotalAgregarNuevo = (parametros.cantidad*productoEncontrado.precio)
-                                                Carritos.findOneAndUpdate({idUsuario:productoCarrito.idUsuario},{total: ( productoCarrito.total +subtotalAgregarNuevo), 
-                                                     //NO SE USA PUL DEBIADO A QUE SE DEBE MODIFICAR SOLO CANTIDAD 
-                                                        compras: [{
-                                                             productos:                                                             
-                                                            {idProducto:productoEncontrado._id,nombreProducto: productoEncontrado.nombreProducto,
-                                                             cantidad: cantidadNueva , precio: productoEncontrado.precio,subTotal: (productoCarrito.compras[i].productos.subTotal+(parametros.cantidad*productoEncontrado.precio)) }
-        
-                                                        }]
-                                                    
-                                                    }, { new: true}, 
+                                                //console.log("Cantidad anterior "+cantidadAnterior)
+                                                //console.log("Cantidad ingresada "+parametros.cantidad)
+                                                //console.log("Cantidad resultante "+cantidadNueva)
+                                                //console.log("sub "+subtotalAgregarNuevo)
+                                                //console.log(productoCarrito.total)
+
+                                                Carritos.findOneAndUpdate( {  idUsuario:req.user.sub , "compras.productos.idProducto":productoEncontrado._id },
+                                                {total: ( productoCarrito.total + subtotalAgregarNuevo),
+                                                    "$set":{
+                                                        "compras.$.productos.cantidad": cantidadNueva,
+                                                        "compras.$.productos.subTotal": (cantidadNueva*productoEncontrado.precio),
+
+                                                    }
+                                                },{ new: true},             
                                                     (err, carritoAgregadoProductoExistente) => {
-                                                        console.log(carritoAgregadoProductoExistente)
+
                                                         if(err) return res.status(500).send({ mensaje: "Error en la peticion" });
-                                                        console.log(carritoAgregadoProductoExistente)
-                                                        if(!carritoAgregadoProductoExistente) return res.status(500).send({ mensaje: 'Error al editar la cantidad del Producto'});
-                                            //////////////////////////////////
-                                                        return res.status(200).send({mensaje:'PRODUCTO DE CARRITO MODIFICADO', carrito: carritoAgregadoProductoExistente});
+                                                        if(!carritoAgregadoProductoExistente) return res.status(500).send({ mensaje: 'Error al editar la cantidad del Producto'});                                            
+
+
+                                                        Carritos.findOne({idUsuario:req.user.sub},(err,carritoFinal)=>{
+                                                            if(err) return res.status(500).send({ mensaje: "Error en la peticion, es necesario que el Administrador revise la base de datos" });
+                                                            if(!carritoFinal) return res.status(500).send({ mensaje: 'Error al editar la cantidad del carrito'});
+                                                            return res.status(200).send({mensaje:'PRODUCTO DE CARRITO MODIFICADO',carrito:carritoAgregadoProductoExistente});
+                                                        })
+
                                                     }).populate('idUsuario','nombre apellido email');  
-        
-                                        }else{//PROUCTO NUEVO A CARRITO
-                                            console.log("El producto no se encuntra")
-                                             nuevoProducto = true
-                                             console.log("El producto es nuevo y se agrega")
-                                             if(parametros.cantidad<=0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor o igual a cero'});
-                                             if(parametros.cantidad>productoEncontrado.stock){//VERIFICAR STOCK
-         
-                                                 if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
-         
-                                                 return res.status(500).send({ mensaje: 'La cantidad ingresada es mayor al stock. Prodcutos en existencia: '+productoEncontrado.stock});
-                                             }
-                                             var subtotalAgregarProd = (parametros.cantidad*productoEncontrado.precio)
-                                             Carritos.findByIdAndUpdate({_id:productoCarrito._id},{ total: (productoCarrito.total + subtotalAgregarProd), 
-                                                 $push: {
-                                                     compras: [{
-                                                         productos:
-                                                         {idProducto:productoEncontrado._id,nombreProducto: productoEncontrado.nombreProducto,
-                                                         cantidad: parametros.cantidad, precio: productoEncontrado.precio,subTotal: (parametros.cantidad*productoEncontrado.precio) }
-         
-                                                     }]
-                                                 } 
-                                             }, { new: true},  
-                                                 (err, carritoActualizado)=>{  
-                                                     if(err) return res.status(500).send({ mensaje: "Error en la peticion de modificar carrito"});
-                                                     if(!carritoActualizado) return res.status(500).send({ mensaje: 'Error al modificar el carrito'});
-                             
-                                                     return res.status(200).send({ carrito: carritoActualizado })
-                                             }).populate('idUsuario','nombre');      
-                                        }
+                                                    encontrado = true
+                                        }  
                                     }
+
+                                    if(encontrado==false){
+                                    //SI LUEGO DE EJECUTAR EL FOR NO ENUCNTRA COINCIDENCIAS DE PRODUCTO -> EL PRODUCTO ES NUEVO
+                                        //PROUCTO NUEVO A CARRITO
+                                        //console.log("El producto no se encuntra")
+                                        nuevoProducto = true
+                                        //console.log("El producto es nuevo y se agrega")
+                                        if(parametros.cantidad<=0) return res.status(500).send({ mensaje: 'La cantidad no puede ser menor o igual a cero'});
+                                        if(parametros.cantidad>productoEncontrado.stock){//VERIFICAR STOCK
+    
+                                            if(productoEncontrado.stock==0) return res.status(500).send({ mensaje: 'Producto agotado. No es posible agregar el producto.'})
+    
+                                            return res.status(500).send({ mensaje: 'Por ahora no puede comprar más artículos. La cantidad del producto en su carrito es mayor al stock. '});
+                                        }
+                                        var subtotalAgregarProd = 0
+                                        subtotalAgregarProd = (parametros.cantidad*productoEncontrado.precio)
+                                        //console.log(productoCarrito.total)
+                                        //console.log(subtotalAgregarProd)
+
+                                        Carritos.findByIdAndUpdate({_id:productoCarrito._id},{ total: (productoCarrito.total + subtotalAgregarProd), 
+                                            $push: {
+                                                compras: [{
+                                                    productos:
+                                                    {idProducto:productoEncontrado._id,nombreProducto: productoEncontrado.nombreProducto,
+                                                    cantidad: parametros.cantidad, precio: productoEncontrado.precio,subTotal: (parametros.cantidad*productoEncontrado.precio) }
+    
+                                                }]
+                                            } 
+                                        }, { new: true},  
+                                            (err, carritoActualizado)=>{  
+                                                if(err) return res.status(500).send({ mensaje: "Error en la peticion de modificar carrito"});
+                                                if(!carritoActualizado) return res.status(500).send({ mensaje: 'Error al modificar el carrito'});
+                        
+                                                return res.status(200).send({mensaje:"NUEVO PRODUCTOS REGISTRADO EN CARRITO", carrito: carritoActualizado })
+                                        }).populate('idUsuario','nombre');      
+                                    }
+
                                 }
 
                             })
@@ -236,31 +265,31 @@ function EliminarProductoCarrito(req, res) {
         if(err) return res.status(500).send({ mensaje:"Error en la peticion, el usuario no posee carritos"})
         if(!carritoUsuario) return res.status(500).send({ mensaje:"El usuario no posee carritos, no puede acceder a esta función"})
             //VERIFICA SI EL PRODUCTO INGRESADO EXISTE EN EL ARRAY DE CARRITO
-            console.log(carritoUsuario.compras.length)
+            //console.log(carritoUsuario.compras.length)
             var finalFord = 0                                    
                //RECORRE EL ARRAY
                 for (let i = 0; i <carritoUsuario.compras.length;i++){
                         if ( carritoUsuario.compras[i].productos.idProducto == idProd){
-                            console.log("producto existe "+carritoUsuario.compras[i].productos.idProducto)
+                            //console.log("producto existe "+carritoUsuario.compras[i].productos.idProducto)
                             var idELiminar = carritoUsuario.compras[i]._id
-                            console.log(idELiminar)
+                            //console.log(idELiminar)
 
+                            var totalModificado = 0
                             var totalModificado = ((carritoUsuario.total)-(carritoUsuario.compras[i].productos.subTotal))
-                            Carritos.findOneAndUpdate({_idUsuarioid:req.user.sub},{total:totalModificado,
+                            Carritos.findOneAndUpdate({_idUsuario:req.user.sub},{total:totalModificado,
                                 $pull: {
                                     compras: {_id:idELiminar}
                                 }
                             }, { new: true},  
                                 (err, carritoActualizado)=>{  
-                                    console.log(err)
+                                    //console.log(err)
                                     if(err) return res.status(500).send({ mensaje: "Error en la peticion de modificar carrito"});
                                     if(!carritoActualizado) return res.status(500).send({ mensaje: 'Error al modificar el carrito'});
             
-                                    return res.status(200).send({ carrito: carritoActualizado })
+                                    return res.status(200).send({mensaje:"PRODUCTO ELIMINADO DEL CARRITO", carrito: carritoActualizado })
                             }).populate('idUsuario','nombre');
                         }else{
                             finalFord++ 
-                            console.log("ford "+finalFord)                                 
                             if(finalFord == carritoUsuario.compras.length){
                                 return res.status(200).send({mensaje:'El producto no existe en el carrito'})
                             }

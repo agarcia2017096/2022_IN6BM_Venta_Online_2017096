@@ -19,12 +19,6 @@ function facturasPDF(idUsuario,idFac,req, res){
             if(datosFacturaEncontrados === null) return res.status(404).send({error: `Error la factura no existe`})
             console.log(datosFacturaEncontrados)
             var nombreDoc=nombreIdEncontrado.nombre+" "+nombreIdEncontrado.apellido+" - "+idFac;
-            console.log("Anndho de array facuras: "+datosFacturaEncontrados.length)
-            console.log(" - - - - --------------------- ")
-
-            console.log("Ancho de array facturas compras: "+datosFacturaEncontrados.compras.length)
-
-
             // DIRECCIONAMIENTO
             var path = "./src/docPDF/"+nombreDoc+".pdf";
             estructuraDocumento(facturaEncontradaUsuario,datosFacturaEncontrados, path);
@@ -214,7 +208,7 @@ function filaRegistro(
   .text("SubTotal:", 120, y+150)
   .font("Helvetica")
   .text("Q "+subTotal, 240, y+150)
-  .text(" - - - - - - - - - - - - - - - - - - - - - - - - ",90,y+160)
+  .text(" - - - - - - - - - - - - - - - - - - - - - - - - ",95,y+160)
 
 }
 
