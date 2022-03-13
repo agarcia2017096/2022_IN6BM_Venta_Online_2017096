@@ -113,7 +113,7 @@ function encabezadoTabla ( doc, facturas) {
       .text("TOTAL A PAGAR:  Q "+facturas.total+"             ",320,300)
       .fillColor("#515A5A")
       .fontSize(8)
-      .text("Fecha:   "+facturas.fecha+"             ",285,325),
+      .text("Fecha:   "+fechaDocumento(facturas.fecha)+"             ",285,325),
 
       invoiceTableTop,
 
@@ -237,6 +237,19 @@ function fechaDocumento(date) {
   const year = date.getFullYear();
 
   return day + "/" + month + "/" + year;
+
+}
+
+function fechafactura(date) {
+  
+  const day = date.getDate();
+  const month = date.getMonth() + 1;
+  const year = date.getFullYear();
+  const hour = date.getHours();
+  const minute = date.getMinutes();
+  const sec = date.getSeconds();
+
+  return day + "/" + month + "/" + year+" - " + hour+":" + minute+":" + sec;
 
 }
 

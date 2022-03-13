@@ -47,7 +47,7 @@ function ObtenerCategoriasAdministrador(req, res) {
     if ( req.user.rol == "ROL_CLIENTE" ) return res.status(500)
     .send({ mensaje: 'No tiene acceso a buscar Categorias. Únicamente el Administrador puede hacerlo'});
 
-    Categorias.find({idUsuario:req.user.sub}, (err, categoriasEncontradas) => {
+    Categorias.find({}, (err, categoriasEncontradas) => {
         if(err) return res.status(500).send({ mensaje: "Error en la peticion" });
         if(!categoriasEncontradas||categoriasEncontradas.length==0) return res.status(500).send({ mensaje: "No hay retorno al buscar categorias, verifique la base de datos"});
         return res.status(200).send({ mensaje:"BUSQUEDA DE CATEGORÍAS EXITOSA",categoria: categoriasEncontradas })
@@ -85,17 +85,28 @@ function EditarCategorias(req, res) {
             .send({ mensaje: 'Solamente se pueden editar los campos de nombre y descripción'});
     
         }else{
+
         if(!buscarCategoria||err)return res.status(404).send( { mensaje: 'La categoria no existe, verifique el ID'});
-            if(buscarCategoria.idUsuario !=req.user.sub) return res.status(500).send({mensaje:"No se pueden editar otras categorias que no pertenecen al usuario Logueado"})
-            Categorias.find({ nombreCategoria : parametros.nombreCategoria }, (err, categoriaEncontrada) => {
-                if ( categoriaEncontrada.length == 0 ) {
-                    parametros.idUsuario = req.user.sub
-                    Categorias.findByIdAndUpdate({_id:idCat}, parametros, { new: true } ,(err, categoriaActualizada) => {
-                        if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
-                        if(!categoriaActualizada) return res.status(404).send( { mensaje: 'Error al editar la categoria'});
-                
-                        return res.status(200).send({ mensaje:"EDICIÓN DE CATEGORÍA EXITOSA",categoria: categoriaActualizada});
-                    });
+
+        if(buscarCategoria.idUsuario !=req.user.sub) return res.status(500).send({mensaje:"No se pueden editar otras categorias que no pertenecen al usuario Logueado"})
+
+            Categorias.findOne({ nombreCategoria : parametros.nombreCategoria }, (err, categoriaEncontrada) => {
+                if ( categoriaEncontrada === null ) {
+
+                    if(parametros.nombreCategoria || parametros.descripcionCategoria){
+                        Categorias.findByIdAndUpdate({_id:idCat}, parametros, { new: true } ,(err, categoriaActualizada) => {
+                            if (err) return res.status(500).send({ mensaje: 'Error en la peticion'});
+                            if(!categoriaActualizada) return res.status(404).send( { mensaje: 'Error al editar la categoria'});
+                    
+                            return res.status(200).send({ mensaje:"EDICIÓN DE CATEGORÍA EXITOSA",categoria: categoriaActualizada});
+                        });                    
+                    }else{
+                        return res.status(200).send({ mensaje:"Únicamnete es posible editar los campos de nombre y descripción"});
+
+                    }
+                    
+
+
                 } else {
                     return res.status(500)
                         .send({ mensaje: 'Este nombre de categoría, ya  se encuentra utilizado. Según la política de la empresa, no es posible repetir nombres de categoría.' });

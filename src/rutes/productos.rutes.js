@@ -30,6 +30,9 @@ api.get('/obtenerCategorias',md_autentificacion.Auth,productosController.Obtener
 //BUSCAR CATEGORIAS POR NOMBRE
 api.get('/categoriasNombre/:nombreCategoria',md_autentificacion.Auth,productosController.ObtenerNombreCategorias)
 
+//BUSCAR PRODUCTOS POR CATEGORÍAS A TRAVÉS DEL NOMBRE
+api.get('/productosCategoriaNombre/:nombreCategoria',md_autentificacion.Auth,productosController.ObtenerProductosNombreCategorias)
+
 //BUSCAR CATALOGO DE PRODUCTOS CON MAYOR CANTIDAD DE VENTAS
 api.get('/catalogoProductos',md_autentificacion.Auth,productosController.CatalogoProductosMasVendidos)
 

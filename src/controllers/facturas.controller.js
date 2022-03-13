@@ -24,61 +24,74 @@ function RegistarFactura(req, res) {
             return res.status(500).send({ mensaje:"Debe llenar el campo nit para generar la factura"})
         }else{
             var finalFord = 0
-            var anulacion = false
+            var recorrido = carritoUsuario.compras.length
+
 
             for (let i = 0; i <carritoUsuario.compras.length;i++){
-
+                //console.log("ENtra a ford ")
                 Productos.findOne({_id:carritoUsuario.compras[i].productos.idProducto},(err,productoVerificacion)=>{
                     if(err) return res.status(500).send({ mensaje:"Error en la peticion"})
                     if(!carritoUsuario) return res.status(500).send({ mensaje:"Busqeuda de producto inexistente"})
 
                     if(carritoUsuario.compras[i].productos.cantidad>productoVerificacion.stock){
-                        anulacion = true
+                        //console.log("PROCESO ANULADO ")
+
 
                         return res.status(500).send({ factura:"PROCESO DE FACTURACIÓN ANULADO",advertencia:"Su carrito posee el producto "+
                         carritoUsuario.compras[i].productos.nombreProducto+" con una cantidad mayor al stock actual. ",
                         mensaje:"Debe editar la cantidad de su carrito o eliminar el producto de su compra para generar una nueva factura."})
-                    }
-                    if(anulacion==false){
+                    }else{
+                        //console.log("VERIFICACIÓN DE STOCK Y PERMITE AGREGAR FACTIRA ")
+
                         if ( carritoUsuario.idUsuario == req.user.sub){
-                            finalFord++ 
-                            var modelFactura = new Facturas()
-                            modelFactura.nit = parametros.nit
-                            var fechas = new Date()
-                            modelFactura.fecha =  (fechaActual(fechas))
-                            modelFactura.compras = carritoUsuario.compras
-                            modelFactura.total =carritoUsuario.total
-                            modelFactura.idUsuario = req.user.sub
-        
+                            //console.log("VERIFICACIÓN USUARIO  ")
+       
+                            //console.log("RESTA SOCK PRODUCTOS ")
+
                             var restarStock = (carritoUsuario.compras[i].productos.cantidad * -1)
-                            //console.log(restarStock)
+                            ////console.log(restarStock)
                             var cantidadVendido = carritoUsuario.compras[i].productos.cantidad
-        
-                            let limpiarCarrito = []
-        
-                            Carritos.findOneAndUpdate({_id:carritoUsuario._id},  { compras: limpiarCarrito , total: 0 }, { new: true }, 
-                                (err, carritoVacio)=>{
                                     Productos.findByIdAndUpdate(carritoUsuario.compras[i].productos.idProducto, { $inc : { stock: restarStock,vendido:cantidadVendido } }, { new: true },
                                         (err, productoModificado) => {
                                             if(!productoModificado) return res.status(500).send({ mensaje: 'Error al editar editar productos'});
                                             if(err) return res.status(500).send({ mensaje:"Error en la peticion"})
+
+                                            //console.log(finalFord)
+                                            //console.log(carritoUsuario.compras.length)
                                     })
-        
-                                })
+                                    //console.log("AV final  "+finalFord)
+                                    //console.log("AV "+recorrido)
+
+                                    //console.log("VERIFICA SI TERMIAN EL FORD. Tamaño: " + recorrido+" -finalFOrs"+finalFord)
+
+                        }else{
+                            return res.status(200).send({mensaje:"Verifique los datos de su carrito",})
                         }
-                        if(finalFord==carritoUsuario.compras.length){
-                            modelFactura.save((err,agregarFactura)=>{
-        
-                                if(!agregarFactura) return res.status(500).send({ mensaje:"No se puede guardar el carrito"})
-                                GenerarPDF.facturasPDF(carritoUsuario.idUsuario,agregarFactura._id)
-                                return res.status(200).send({mensaje:"El carrito del cliente se encuntra vacío",factura:agregarFactura,PDF:"El PDf del usuario se ha creado exitosamente"})
-                            })//.populate('idUsuario','nombre')
-                        }
-                    }else{
                     }
+
                 })
-                break
+
             }
+
+            const modelFactura = new Facturas()
+            modelFactura.nit = parametros.nit
+            modelFactura.fecha =  (new Date())
+            modelFactura.compras = carritoUsuario.compras
+            modelFactura.total =carritoUsuario.total
+            modelFactura.idUsuario = req.user.sub
+            let limpiarCarrito = []
+            Carritos.findOneAndUpdate({_id:carritoUsuario._id},  { compras: limpiarCarrito , total: 0 }, { new: true }, 
+                (err, carritoVacio)=>{
+
+                modelFactura.save((err,agregarFactura)=>{  
+                    //console.log(err)                      
+                    if(err) return res.status(500).send({ mensaje:"Erro, no se puede guardar el carrito"})
+                    if(!agregarFactura) return res.status(500).send({ mensaje:"No se puede guardar el carrito"})
+                    GenerarPDF.facturasPDF(carritoUsuario.idUsuario,agregarFactura._id)
+                    return res.status(200).send({mensaje:"El carrito del cliente se encuentra vacío",factura:agregarFactura,PDF:"El PDf del usuario se ha creado exitosamente"})
+
+                })//.populate('idUsuario','nombre apellido email')
+            })
             
         }
 

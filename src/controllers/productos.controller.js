@@ -158,6 +158,8 @@ function EditarProductos(req, res) {
         
         
                         
+                    }else{
+                        return res.status(500).send({ mensaje: 'Verifique los datos para la edición' });
                     }
             } else {
                 return res.status(500).send({ mensaje: 'Este producto ya existe. Ingrese otro nombre' });
@@ -209,6 +211,26 @@ function ObtenerNombreCategorias(req, res) {
     })//.populate("idUsuario","nombre email")
 }
 
+//********************************* 3 BUSCAR PRODUCTOS POR CATEGORÍAS A TRAVÉS DEL NOMBRE ********************************* */
+function ObtenerProductosNombreCategorias(req, res) {
+    var nomCat = req.params.nombreCategoria;
+
+    if ( req.user.rol == "ROL_ADMINISTRADOR" ) return res.status(500)
+    .send({ mensaje: 'No tiene acceso a buscar Categorías. Solamente el cliente puede hacerlo'});
+
+    Categorias.findOne( { nombreCategoria : nomCat}, (err, categoriaEncontrada) => {
+        if(err) return res.status(500).send({ mensaje: "Error no se ha encontrado el nombre" });
+        if(categoriaEncontrada==null) return res.status(404).send({ mensaje: "El nombre de la categoría no existe. Ingrese el nombre completo de otra categoría" });
+
+        Productos.find( { idCategoria : categoriaEncontrada._id }, (err, productosCategorias) => {
+            if(err) return res.status(500).send({ mensaje: "Error no se ha encontrado el nombre" });
+            if(productosCategorias.length==0) return res.status(404).send({ mensaje: "No existen productos dentro de esta categoría" });
+            return res.status(200).send({mensaje:"BUSQUEDA EXITOSA DE CATÁLOGO DE PRODUCTOS POR NOMBRE DE CATEGPRÍA", producto: productosCategorias })
+        }).populate("idCategoria","nombreCategoria descripcionCategoria")
+
+    })
+}
+
 //********************************* 4 BUSCAR PRODUCTOS MÁS VENDIDOS ********************************* */
 function CatalogoProductosMasVendidos(req, res) {
 
@@ -232,7 +254,7 @@ module.exports ={
     ObtenerNombreProductos,
     ObtenerCategorias,
     ObtenerNombreCategorias,
-    CatalogoProductosMasVendidos
-    
+    CatalogoProductosMasVendidos,
+    ObtenerProductosNombreCategorias
 
 }

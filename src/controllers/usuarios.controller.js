@@ -27,6 +27,7 @@ function Login(req, res) {
 
                                 if(err) return res.status(500).send({ mensaje: "Error en la peticion, no existen facturas del cliente" });
                                 //USUARIO LOGUEADO ADMINISTRADOR NO PUEDE TENER FACTURAS NO TETORNA REGISTRO
+
                                 if(usuarioEncontrado.rol == "ROL_ADMINISTRADOR"){
                                     if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({mensaje:"INICIO DE SESIÓN",token: jwt.crearToken(usuarioEncontrado)});
                                 }
@@ -39,9 +40,21 @@ function Login(req, res) {
                             }).populate('idUsuario',"nombre")
 
                         } else {
-                            usuarioEncontrado.password = undefined;
-                            return  res.status(200)
-                                .send({ usuario: usuarioEncontrado})
+                            Facturas.find({idUsuario:usuarioEncontrado._id}, (err, facturasEncontradas) => {
+
+                                if(err) return res.status(500).send({ mensaje: "Error en la peticion, no existen facturas del cliente" });
+                                //USUARIO LOGUEADO ADMINISTRADOR NO PUEDE TENER FACTURAS NO TETORNA REGISTRO
+
+                                if(usuarioEncontrado.rol == "ROL_ADMINISTRADOR"){
+                                    if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({mensaje:"INICIO DE SESIÓN"});
+                                }
+                                //NO EXISTEN FACTURAS EN CLIENTE
+                                if(!facturasEncontradas||facturasEncontradas.length==0) return res.status(500).send({mensaje:"INICIO DE SESIÓN", registro: "*El usuario no posee facturas.*"});
+                                
+                                //EXISTEN FACTURAS EN CLIENTES
+                                return res.status(200)
+                                .send({mensaje:"INICIO DE SESIÓN", registro:"FACTURAS:", facturas:facturasEncontradas })
+                            }).populate('idUsuario',"nombre")
                         }
 
                     
